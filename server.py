@@ -39,7 +39,7 @@ CSV_FILE  = os.path.join(HERE, "rock_factor_training_data.csv")
 
 # Same free vision model your step-2 script used. If it's busy, OpenRouter's
 # auto-router "openrouter/free" will pick another free vision-capable model.
-VISION_MODEL = "meta-llama/llama-4-maverick:free"
+VISION_MODEL = "openrouter/free"
 
 app = Flask(__name__)
 

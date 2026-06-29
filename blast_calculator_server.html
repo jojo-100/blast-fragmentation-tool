@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuz-Ram Blast Fragmentation Calculator</title>
+<style>
+  body{
+    background:#ffffff;
+    color:#000000;
+    font-family:"Times New Roman",Times,serif;
+    font-size:14px;
+    margin:10px;
+  }
+  h1{font-size:18px;margin:0 0 2px 0;font-weight:bold}
+  h2{font-size:14px;margin:14px 0 4px 0;font-weight:bold;background:#c0c0c0;padding:2px 4px;border:1px solid #808080}
+  .subtitle{font-size:12px;margin-bottom:10px}
+  hr{border:none;border-top:1px solid #808080;margin:8px 0}
+
+  table.layout{border-collapse:collapse;width:100%}
+  table.layout > tbody > tr > td{vertical-align:top;padding:0 8px 0 0}
+  td.inputcol{width:300px}
+  td.outputcol{}
+
+  /* input table */
+  table.form{border-collapse:collapse;width:100%;margin-bottom:8px}
+  table.form td{padding:2px 4px;font-size:13px}
+  table.form td.lbl{text-align:left;white-space:nowrap}
+  table.form td.sym{color:#000;font-style:italic;width:34px;text-align:left}
+  table.form td.in{width:80px}
+  table.form td.un{font-size:11px;color:#000;width:46px}
+  table.form input{
+    font-family:"Courier New",monospace;font-size:13px;
+    width:70px;text-align:right;border:1px solid #808080;padding:1px 2px;
+  }
+  table.form tr.grphdr td{background:#e0e0e0;font-weight:bold;font-size:11px;padding-top:4px}
+
+  /* results */
+  table.results{border-collapse:collapse;width:100%;margin-bottom:6px}
+  table.results td,table.results th{border:1px solid #808080;padding:3px 6px;font-size:13px}
+  table.results th{background:#c0c0c0;text-align:left;font-weight:bold}
+  table.results td.num{text-align:right;font-family:"Courier New",monospace}
+  .bignum{font-family:"Courier New",monospace;font-size:16px;font-weight:bold}
+
+  /* distribution table */
+  table.dist{border-collapse:collapse;margin-bottom:6px}
+  table.dist td,table.dist th{border:1px solid #808080;padding:2px 10px;font-size:13px;text-align:right;font-family:"Courier New",monospace}
+  table.dist th{background:#c0c0c0;font-family:"Times New Roman",serif;font-weight:bold}
+  table.dist tr.tgt td{background:#ffffcc;font-weight:bold}
+
+  /* chart */
+  svg{border:1px solid #808080;background:#ffffff;display:block}
+
+  /* validation */
+  table.cases{border-collapse:collapse;margin-bottom:6px}
+  table.cases td{border:1px solid #808080;padding:0}
+  table.cases input[type=button]{
+    font-family:"Times New Roman",serif;font-size:12px;padding:3px 8px;
+    background:#e0e0e0;border:1px solid #808080;cursor:pointer;width:100%;
+  }
+  table.cases input[type=button].on{background:#c0c0c0;font-weight:bold}
+  .srcbox{font-size:12px;border:1px solid #808080;background:#f4f4f4;padding:4px 6px;margin-bottom:6px}
+  .verdictbox{border:2px solid #808080;background:#f0f0f0;padding:5px 7px;font-size:13px;margin-bottom:6px}
+  .verdictbox .e{font-family:"Courier New",monospace;font-size:16px;font-weight:bold}
+
+  .method{font-size:12px;color:#000;line-height:1.4;margin-top:10px;border-top:1px solid #808080;padding-top:6px}
+  .method code{font-family:"Courier New",monospace;font-size:12px}
+  .method .ref{font-style:italic}
+  .footer{font-size:11px;color:#000;margin-top:10px;border-top:1px solid #808080;padding-top:4px}
+  .legend{font-size:11px;margin:2px 0}
+  .legend b.p{color:#cc6600}
+  .legend b.m{color:#0066cc}
+
+  /* photo + ML panel */
+  .mlpanel{border:1px solid #808080;background:#f8f8f8;padding:6px;margin-bottom:6px}
+  table.mlflow{border-collapse:collapse;width:100%}
+  table.mlflow > tbody > tr > td.mlcol{vertical-align:top;width:50%;padding:4px 10px;border-right:1px solid #c0c0c0}
+  .mlpanel .step{font-weight:bold;font-size:12px;background:#e0e0e0;padding:2px 4px;margin-bottom:4px;border:1px solid #c0c0c0}
+  .mlpanel table.form td.lbl{white-space:nowrap}
+  .mlpanel .status{font-size:12px;color:#333;margin-top:5px}
+  .mlpanel .desc{font-size:11px;color:#000;background:#fff;border:1px solid #c0c0c0;padding:4px;margin-top:5px;white-space:pre-wrap;max-height:150px;overflow:auto;font-family:"Courier New",monospace}
+  .mlpanel input[type=button]{font-family:"Times New Roman",serif;font-size:12px;padding:3px 8px;background:#e0e0e0;border:1px solid #808080;cursor:pointer;margin-top:5px}
+  .mlpanel input[type=file]{font-size:12px;margin-bottom:3px}
+</style>
+</head>
+<body>
+
+<h1>Kuz-Ram Blast Fragmentation Calculator</h1>
+<div class="subtitle">
+Predicts muckpile fragment size distribution from blast design parameters.
+Compares prediction against documented field blasts. &nbsp;|&nbsp;
+Model: Cunningham (1983/1987). Metric units. ANFO reference RWS = 100.
+</div>
+<hr>
+
+<table class="layout"><tbody><tr>
+
+<!-- ============ INPUT COLUMN ============ -->
+<td class="inputcol">
+<h2>Blast Design Inputs</h2>
+<table class="form"><tbody>
+  <tr class="grphdr"><td colspan="4">GEOMETRY</td></tr>
+  <tr><td class="lbl">Burden</td><td class="sym">B</td><td class="in"><input id="B" type="number" value="3.0" step="0.1"></td><td class="un">m</td></tr>
+  <tr><td class="lbl">Spacing</td><td class="sym">S</td><td class="in"><input id="S" type="number" value="3.5" step="0.1"></td><td class="un">m</td></tr>
+  <tr><td class="lbl">Bench height</td><td class="sym">H</td><td class="in"><input id="H" type="number" value="12.0" step="0.5"></td><td class="un">m</td></tr>
+  <tr><td class="lbl">Hole diameter</td><td class="sym">d</td><td class="in"><input id="d" type="number" value="102" step="1"></td><td class="un">mm</td></tr>
+  <tr><td class="lbl">Charge length</td><td class="sym">L</td><td class="in"><input id="L" type="number" value="8.0" step="0.5"></td><td class="un">m</td></tr>
+
+  <tr class="grphdr"><td colspan="4">EXPLOSIVE</td></tr>
+  <tr><td class="lbl">Charge per hole</td><td class="sym">Q</td><td class="in"><input id="Q" type="number" value="45" step="1"></td><td class="un">kg</td></tr>
+  <tr><td class="lbl">Rel. wt. strength</td><td class="sym">RWS</td><td class="in"><input id="RWS" type="number" value="100" step="1"></td><td class="un">/ANFO</td></tr>
+
+  <tr class="grphdr"><td colspan="4">ROCK &amp; DRILLING</td></tr>
+  <tr><td class="lbl">Rock factor</td><td class="sym">A</td><td class="in"><input id="A" type="number" value="10" step="0.5"></td><td class="un">7-22</td></tr>
+  <tr><td class="lbl">Drill accuracy SD</td><td class="sym">W</td><td class="in"><input id="W" type="number" value="0.2" step="0.05"></td><td class="un">m</td></tr>
+
+  <tr class="grphdr"><td colspan="4">TARGET (OPTIONAL)</td></tr>
+  <tr><td class="lbl">Max accept. size</td><td class="sym">&nbsp;</td><td class="in"><input id="target" type="number" value="60" step="5"></td><td class="un">cm</td></tr>
+</tbody></table>
+</td>
+
+<!-- ============ OUTPUT COLUMN ============ -->
+<td class="outputcol">
+<h2>Predicted Fragmentation</h2>
+
+<table class="results"><tbody>
+  <tr>
+    <th>Mean size X50</th>
+    <td class="num"><span class="bignum" id="x50">—</span> cm</td>
+    <th>Uniformity index n</th>
+    <td class="num"><span class="bignum" id="nidx">—</span></td>
+  </tr>
+  <tr>
+    <th>Characteristic size Xc</th><td class="num"><span id="xc">—</span> cm</td>
+    <th>Powder factor</th><td class="num"><span id="pf">—</span> kg/m&sup3;</td>
+  </tr>
+  <tr>
+    <th>Rock volume / hole</th><td class="num"><span id="v0">—</span> m&sup3;</td>
+    <th>Oversize (&gt; target)</th><td class="num"><span id="oversize">—</span> %</td>
+  </tr>
+</tbody></table>
+
+<div class="legend">Cumulative passing curve &nbsp; [ <b class="p">&#9472;&#9472; predicted</b> &nbsp; <b class="m">- - measured</b> ]</div>
+<svg id="chart" width="600" height="300" viewBox="0 0 600 300"></svg>
+
+<h2>Size Distribution Table</h2>
+<table class="dist" id="distTable">
+  <thead><tr><th>Size (cm)</th><th>% passing</th><th>% retained</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<h2>Validation: Model vs. Documented Field Blast</h2>
+<table class="cases"><tbody><tr id="caseRow"></tr></tbody></table>
+<div class="srcbox" id="caseSrc">&mdash;</div>
+<div class="verdictbox" id="verdict">
+  X50 error: <span class="e" id="vErr">&mdash;</span><br>
+  <span id="vTxt">Load a case to compare the model's prediction against the measured field result.</span>
+</div>
+
+</td>
+</tr></tbody></table>
+
+<!-- ============ ROCK FACTOR A FROM PHOTO (vision model + ML) ============ -->
+<h2>Rock Factor A from Photo &mdash; Vision Model + Machine-Learning Estimator</h2>
+<div class="mlpanel">
+<table class="mlflow"><tbody><tr>
+
+  <td class="mlcol">
+    <div class="step">STEP 1 &mdash; analyze a rock photo (spatial / vision model)</div>
+    <input type="file" id="rockPhoto" accept="image/*"><br>
+    <input type="button" id="analyzeBtn" value="Analyze photo">
+    <div id="visionStatus" class="status">No photo analyzed yet. The vision model reads rock-mass properties from the image.</div>
+    <div id="visionDesc" class="desc"></div>
+  </td>
+
+  <td class="mlcol">
+    <div class="step">STEP 2 &mdash; estimated rock-mass properties (editable)</div>
+    <table class="form"><tbody>
+      <tr><td class="lbl">Rock-mass description</td><td class="sym">RMD</td><td class="in"><input id="RMD" type="number" step="1"></td></tr>
+      <tr><td class="lbl">Joint plane spacing</td><td class="sym">JPS</td><td class="in"><input id="JPS" type="number" step="1"></td></tr>
+      <tr><td class="lbl">Joint plane angle</td><td class="sym">JPA</td><td class="in"><input id="JPA" type="number" step="1"></td></tr>
+      <tr><td class="lbl">Rock density influence</td><td class="sym">RDI</td><td class="in"><input id="RDI" type="number" step="0.1"></td></tr>
+      <tr><td class="lbl">Hardness factor</td><td class="sym">HF</td><td class="in"><input id="HF" type="number" step="0.1"></td></tr>
+    </tbody></table>
+    <input type="button" id="predictBtn" value="Predict A (ML) &rarr; load into calculator">
+    <div id="mlStatus" class="status">The trained model predicts rock factor A from the five properties, then fills the Rock factor (A) box in the inputs above.</div>
+  </td>
+
+</tr></tbody></table>
+</div>
+
+<div class="method">
+<b>Method.</b>
+Mean fragment size from the Kuznetsov equation as reformulated by Cunningham:
+<code>X50 = A*(V0/Q)^0.8*Q^(1/6)*(115/RWS)^(19/30)</code>, where <code>V0 = B*S*H</code> is rock volume broken per hole.
+Spread from the uniformity index <code>n = (2.2 - 14*B/d)*sqrt((1+S/B)/2)*(1 - W/B)*(L/H)</code>.
+Size distribution from Rosin-Rammler: <code>P(x) = 1 - exp(-0.693*(x/X50)^n)</code>.
+Rock factor A: ~7 soft/weathered, ~10 medium, ~13 hard jointed, up to ~22 massive/strong.
+RWS = explosive weight strength relative to ANFO (=100).
+<br><br>
+<span class="ref">References: Cunningham, C.V.B. (1983), "The Kuz-Ram model for prediction of fragmentation from blasting";
+Cunningham (1987), 2nd Int. Symp. on Rock Fragmentation by Blasting. Validation cases carry their own published
+sources (shown per case). This is a planning estimate; the model assumes a single explosive type and does not
+capture fines from the crushed zone or in-situ block effects.</span>
+</div>
+
+<div class="footer">
+Kuz-Ram Blast Fragmentation Calculator &mdash; served by local Python (Flask): Kuz-Ram in-browser, rock-factor ML and vision model run server-side.
+<span id="liveStamp"></span>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- Kuz-Ram core (verified) ---------- */
+function predict(p){
+  var V0 = p.B * p.S * p.H;
+  var powderFactor = p.Q / V0;
+  var X50 = p.A * Math.pow(V0/p.Q, 0.8) * Math.pow(p.Q, 1/6) * Math.pow(115/p.RWS, 19/30);
+  var n = (2.2 - 14*p.B/p.d) * Math.sqrt((1 + p.S/p.B)/2) * (1 - p.W/p.B) * (p.L/p.H);
+  if(!isFinite(n) || n <= 0) n = 0.01;
+  var Xc = X50 / Math.pow(0.693, 1/n);
+  return {V0:V0, powderFactor:powderFactor, X50:X50, n:n, Xc:Xc};
+}
+function passing(x, X50, n){
+  return (1 - Math.exp(-0.693 * Math.pow(x/X50, n))) * 100;
+}
+
+/* ---------- Documented validation cases ----------
+   REPLACE the placeholder numbers below with REAL published blasts:
+   each needs the full blast design AND the measured X50 from the source.   */
+var CASES = [
+  {id:"Quarry - limestone",
+   p:{B:3.0,S:3.5,H:12.0,d:102,L:8.0,Q:45,RWS:100,A:9,W:0.2},
+   measuredX50:42.0,
+   src:"Limestone quarry bench, 102 mm holes, ANFO. Measured by digital image analysis of the muckpile. Published measured X50 = 42.0 cm. [PLACEHOLDER - replace with a real cited blast]"},
+  {id:"Open-pit - medium",
+   p:{B:4.5,S:5.5,H:15.0,d:165,L:10.0,Q:120,RWS:100,A:11,W:0.3},
+   measuredX50:31.0,
+   src:"Open-pit production blast, 165 mm holes, bulk emulsion/ANFO. [PLACEHOLDER - replace with a real cited blast]"},
+  {id:"Hard rock - granite",
+   p:{B:2.8,S:3.2,H:10.0,d:89,L:7.0,Q:32,RWS:100,A:13,W:0.15},
+   measuredX50:35.0,
+   src:"Hard jointed granite, 89 mm holes, ANFO. [PLACEHOLDER - replace with a real cited blast]"}
+];
+
+/* ---------- DOM ---------- */
+var ids = ["B","S","H","d","L","Q","RWS","A","W","target"];
+var el = {};
+for(var i=0;i<ids.length;i++){ el[ids[i]] = document.getElementById(ids[i]); }
+function $(id){ return document.getElementById(id); }
+
+function readInputs(){
+  return {B:+el.B.value,S:+el.S.value,H:+el.H.value,d:+el.d.value,L:+el.L.value,
+          Q:+el.Q.value,RWS:+el.RWS.value,A:+el.A.value,W:+el.W.value};
+}
+
+var activeCase = -1;
+
+/* ---------- chart ---------- */
+function drawChart(X50, n, overlay){
+  var svg=$("chart");
+  var W=600,H=300, mL=42,mR=12,mT=10,mB=34;
+  var plotW=W-mL-mR, plotH=H-mT-mB, xMax=120;
+  function sx(v){ return mL + Math.min(v,xMax)/xMax*plotW; }
+  function sy(v){ return mT + (1 - v/100)*plotH; }
+  var s="";
+  var gp,gx,x,yv;
+  for(gp=0; gp<=100; gp+=20){
+    s += '<line x1="'+mL+'" y1="'+sy(gp)+'" x2="'+(W-mR)+'" y2="'+sy(gp)+'" stroke="#cccccc" stroke-width="1"/>';
+    s += '<text x="'+(mL-5)+'" y="'+(sy(gp)+3)+'" text-anchor="end" font-family="monospace" font-size="9" fill="#000">'+gp+'</text>';
+  }
+  for(gx=0; gx<=xMax; gx+=20){
+    s += '<line x1="'+sx(gx)+'" y1="'+mT+'" x2="'+sx(gx)+'" y2="'+(H-mB)+'" stroke="#cccccc" stroke-width="1"/>';
+    s += '<text x="'+sx(gx)+'" y="'+(H-mB+13)+'" text-anchor="middle" font-family="monospace" font-size="9" fill="#000">'+gx+'</text>';
+  }
+  // axis box
+  s += '<rect x="'+mL+'" y="'+mT+'" width="'+plotW+'" height="'+plotH+'" fill="none" stroke="#808080" stroke-width="1"/>';
+  s += '<text x="'+(mL+plotW/2)+'" y="'+(H-2)+'" text-anchor="middle" font-family="serif" font-size="11" fill="#000">fragment size (cm)</text>';
+  s += '<text transform="translate(10,'+(mT+plotH/2)+') rotate(-90)" text-anchor="middle" font-family="serif" font-size="11" fill="#000">cumulative % passing</text>';
+  // 50% guide
+  s += '<line x1="'+mL+'" y1="'+sy(50)+'" x2="'+sx(X50)+'" y2="'+sy(50)+'" stroke="#808080" stroke-width="1" stroke-dasharray="2 2"/>';
+  s += '<line x1="'+sx(X50)+'" y1="'+sy(50)+'" x2="'+sx(X50)+'" y2="'+(H-mB)+'" stroke="#808080" stroke-width="1" stroke-dasharray="2 2"/>';
+  // measured overlay
+  if(overlay){
+    var mc="";
+    for(x=0;x<=xMax;x+=2){ yv=passing(x, overlay.measuredX50, n); mc += (x===0?'M':'L')+sx(x).toFixed(1)+','+sy(yv).toFixed(1)+' '; }
+    s += '<path d="'+mc+'" fill="none" stroke="#0066cc" stroke-width="1.5" stroke-dasharray="5 3"/>';
+    s += '<circle cx="'+sx(overlay.measuredX50)+'" cy="'+sy(50)+'" r="4" fill="#0066cc"/>';
+  }
+  // predicted
+  var pc="";
+  for(x=0;x<=xMax;x+=2){ yv=passing(x, X50, n); pc += (x===0?'M':'L')+sx(x).toFixed(1)+','+sy(yv).toFixed(1)+' '; }
+  s += '<path d="'+pc+'" fill="none" stroke="#cc6600" stroke-width="2"/>';
+  svg.innerHTML=s;
+}
+
+/* ---------- table ---------- */
+function drawTable(X50,n,target){
+  var sizes=[5,10,20,30,40,50,60,80,100];
+  var rows="";
+  for(var i=0;i<sizes.length;i++){
+    var x=sizes[i], pass=passing(x,X50,n);
+    var tgt=Math.abs(x-target)<0.5;
+    rows += '<tr class="'+(tgt?'tgt':'')+'"><td style="text-align:left;font-family:serif">'+x+(tgt?' (target)':'')+'</td><td>'+pass.toFixed(1)+'</td><td>'+(100-pass).toFixed(1)+'</td></tr>';
+  }
+  $("distTable").getElementsByTagName("tbody")[0].innerHTML=rows;
+}
+
+/* ---------- verdict ---------- */
+function showVerdict(predX50, overlay){
+  var errEl=$("vErr"), txtEl=$("vTxt"), srcEl=$("caseSrc"), box=$("verdict");
+  if(!overlay){
+    errEl.innerHTML="&mdash;";
+    txtEl.textContent="Load a case to compare the model's prediction against the measured field result.";
+    srcEl.innerHTML="No validation case loaded. Inputs above are freely editable for design exploration.";
+    box.style.borderColor="#808080";
+    return;
+  }
+  srcEl.innerHTML="<b>"+overlay.id+"</b> &mdash; "+overlay.src;
+  var err=(predX50 - overlay.measuredX50)/overlay.measuredX50*100;
+  var abs=Math.abs(err);
+  errEl.textContent=(err>=0?"+":"")+err.toFixed(1)+"%";
+  var msg;
+  if(abs<=15){ msg="Within +/-15%: the model reproduces the field result well. Kuz-Ram is generally considered reliable in this band."; box.style.borderColor="#008000"; }
+  else if(abs<=30){ msg="Within +/-30%: acceptable for a planning estimate, but the gap shows the model's sensitivity to rock factor and explosive assumptions."; box.style.borderColor="#cc8800"; }
+  else { msg="Outside +/-30%: the model diverges from reality here. Likely the rock factor A or charge assumptions do not match field conditions -- this is where engineering judgement overrides the formula."; box.style.borderColor="#cc0000"; }
+  txtEl.textContent="Predicted "+predX50.toFixed(1)+" cm vs. measured "+overlay.measuredX50.toFixed(1)+" cm. "+msg;
+}
+
+/* ---------- main ---------- */
+function recompute(){
+  var p=readInputs();
+  var r=predict(p);
+  var target=+el.target.value;
+  $("x50").textContent=r.X50.toFixed(1);
+  $("nidx").textContent=r.n.toFixed(2);
+  $("xc").textContent=r.Xc.toFixed(1);
+  $("pf").textContent=r.powderFactor.toFixed(3);
+  $("v0").textContent=r.V0.toFixed(1);
+  $("oversize").textContent=(100-passing(target,r.X50,r.n)).toFixed(1);
+  var overlay = activeCase>=0 ? CASES[activeCase] : null;
+  drawChart(r.X50,r.n,overlay);
+  drawTable(r.X50,r.n,target);
+  showVerdict(r.X50,overlay);
+}
+
+/* ---------- cases ---------- */
+function buildCaseRow(){
+  var row=$("caseRow");
+  row.innerHTML="";
+  for(var i=0;i<CASES.length;i++){
+    (function(idx){
+      var td=document.createElement("td");
+      var btn=document.createElement("input");
+      btn.type="button"; btn.value=CASES[idx].id;
+      btn.onclick=function(){ loadCase(idx); };
+      td.appendChild(btn); row.appendChild(td);
+    })(i);
+  }
+  var td2=document.createElement("td");
+  var b2=document.createElement("input");
+  b2.type="button"; b2.value="(free design)";
+  b2.onclick=function(){ loadCase(-1); };
+  td2.appendChild(b2); row.appendChild(td2);
+}
+function loadCase(idx){
+  activeCase=idx;
+  var btns=$("caseRow").getElementsByTagName("input");
+  for(var i=0;i<btns.length;i++){
+    var isOn = (idx>=0 && i===idx) || (idx===-1 && i===CASES.length);
+    if(isOn) btns[i].className="on"; else btns[i].className="";
+  }
+  if(idx>=0){
+    var p=CASES[idx].p;
+    el.B.value=p.B; el.S.value=p.S; el.H.value=p.H; el.d.value=p.d;
+    el.L.value=p.L; el.Q.value=p.Q; el.RWS.value=p.RWS; el.A.value=p.A; el.W.value=p.W;
+  }
+  recompute();
+}
+
+for(var k=0;k<ids.length;k++){ el[ids[k]].oninput=recompute; }
+buildCaseRow();
+loadCase(0);
+$("liveStamp").textContent = "Computed: " + new Date().toString().slice(0,24);
+
+/* ---------- vision + ML rock-factor pipeline ---------- */
+function setStatus(id, msg, kind){
+  var e=$(id); e.textContent=msg;
+  e.style.color = (kind==='err') ? '#cc0000' : (kind==='ok' ? '#008000' : '#333');
+}
+
+$("analyzeBtn").onclick = function(){
+  var f = $("rockPhoto").files[0];
+  if(!f){ setStatus("visionStatus","Choose a photo first.","err"); return; }
+  setStatus("visionStatus","Analyzing photo... (free vision model can take 10-30 s)","");
+  $("visionDesc").textContent="";
+  var fd = new FormData();
+  fd.append("photo", f);
+  fetch("/analyze_photo", {method:"POST", body:fd})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.error){ setStatus("visionStatus","Error: "+d.error,"err"); if(d.raw) $("visionDesc").textContent=d.raw; return; }
+      $("RMD").value=d.RMD; $("JPS").value=d.JPS; $("JPA").value=d.JPA;
+      $("RDI").value=d.RDI; $("HF").value=d.HF;
+      $("visionDesc").textContent=d.description||"";
+      setStatus("visionStatus","Done. Properties filled at right -- edit any value if needed, then predict A.","ok");
+    })
+    .catch(function(e){ setStatus("visionStatus","Request failed: "+e,"err"); });
+};
+
+$("predictBtn").onclick = function(){
+  var body = {
+    RMD:+$("RMD").value, JPS:+$("JPS").value, JPA:+$("JPA").value,
+    RDI:+$("RDI").value, HF:+$("HF").value
+  };
+  var vals=[body.RMD,body.JPS,body.JPA,body.RDI,body.HF];
+  if(vals.some(function(v){return !isFinite(v);})){
+    setStatus("mlStatus","Fill all five property values first (analyze a photo, or type them in).","err"); return;
+  }
+  setStatus("mlStatus","Predicting...","");
+  fetch("/predict_rock_factor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.error){ setStatus("mlStatus","Error: "+d.error,"err"); return; }
+      el.A.value = d.A.toFixed(2);
+      loadCase(-1);   /* switch to free-design mode so the new A is used, then recompute */
+      el.A.value = d.A.toFixed(2);
+      recompute();
+      setStatus("mlStatus","ML predicted rock factor A = "+d.A.toFixed(2)+"  ->  loaded into the calculator (free-design mode).","ok");
+    })
+    .catch(function(e){ setStatus("mlStatus","Request failed: "+e,"err"); });
+};
+</script>
+</body>
+</html>

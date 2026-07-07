@@ -63,6 +63,11 @@
   td.lbl[title],table.results th[title]{cursor:help;text-decoration:underline dotted #808080;text-underline-offset:2px}
   .researchbar{margin:14px 0 6px}
   .researchbar input{font-family:"Times New Roman",serif;font-size:13px;padding:4px 10px;background:#e0e0e0;border:1px solid #808080;cursor:pointer}
+  .presets{margin:5px 0}
+  .presets .plabel{font-size:11px;color:#333}
+  .presetBtn{font-family:"Times New Roman",serif;font-size:11px;padding:2px 7px;margin:3px 4px 0 0;background:#e0e0e0;border:1px solid #808080;cursor:pointer}
+  .previewwrap{margin:5px 0}
+  .preview{max-width:180px;max-height:135px;border:1px solid #808080;display:block}
   .disclosure{font-size:12px;line-height:1.45;border:2px solid #b8860b;background:#fffbe6;padding:6px 8px;margin-bottom:6px}
   .verdictbox{border:2px solid #808080;background:#f0f0f0;padding:5px 7px;font-size:13px;margin-bottom:6px}
   .verdictbox .e{font-family:"Courier New",monospace;font-size:16px;font-weight:bold}
@@ -164,8 +169,17 @@ Load a real mine site below to compare the prediction against measured field dat
   <td class="mlcol">
     <div class="step">Step 1 &mdash; upload a rock photo</div>
     <input type="file" id="rockPhoto" accept="image/*"><br>
+    <div class="presets">
+      <span class="plabel">No photo? Try an example:</span><br>
+      <input type="button" class="presetBtn" data-img="preset1.jpg" value="Example 1">
+      <input type="button" class="presetBtn" data-img="preset2.jpg" value="Example 2">
+      <input type="button" class="presetBtn" data-img="preset3.jpg" value="Example 3">
+    </div>
+    <div id="previewWrap" class="previewwrap" style="display:none">
+      <img id="preview" class="preview" alt="selected rock photo">
+    </div>
     <input type="button" id="analyzeBtn" value="Analyze photo">
-    <div id="visionStatus" class="status">Pick a photo of a rock face, then click Analyze.</div>
+    <div id="visionStatus" class="status">Pick a photo of a rock face (or an example), then click Analyze.</div>
     <div id="visionDesc" class="desc"></div>
   </td>
 
@@ -419,13 +433,34 @@ function setStatus(id, msg, kind){
   e.style.color = (kind==='err') ? '#cc0000' : (kind==='ok' ? '#008000' : '#333');
 }
 
+/* selectedPreset holds a preset filename when an example is chosen; an upload clears it */
+var selectedPreset = null;
+function showPreview(src){ $("preview").src=src; $("previewWrap").style.display="block"; }
+
+$("rockPhoto").onchange = function(){
+  var f=this.files[0]; if(!f){ return; }
+  selectedPreset=null;
+  showPreview(URL.createObjectURL(f));
+  setStatus("visionStatus","Photo selected. Click Analyze photo.","");
+};
+
+var pbtns=document.getElementsByClassName("presetBtn");
+for(var pi=0; pi<pbtns.length; pi++){
+  pbtns[pi].onclick=function(){
+    selectedPreset=this.getAttribute("data-img");
+    $("rockPhoto").value="";
+    showPreview("/presets/"+selectedPreset);
+    setStatus("visionStatus","Example selected. Click Analyze photo.","");
+  };
+}
+
 $("analyzeBtn").onclick = function(){
   var f = $("rockPhoto").files[0];
-  if(!f){ setStatus("visionStatus","Choose a photo first.","err"); return; }
-  setStatus("visionStatus","Analyzing photo... (free vision model can take 10-30 s)","");
+  if(!f && !selectedPreset){ setStatus("visionStatus","Choose a photo or an example first.","err"); return; }
+  setStatus("visionStatus","Analyzing photo... (can take 10-30 s)","");
   $("visionDesc").textContent="";
   var fd = new FormData();
-  fd.append("photo", f);
+  if(f){ fd.append("photo", f); } else { fd.append("preset", selectedPreset); }
   fetch("/analyze_photo", {method:"POST", body:fd})
     .then(function(r){ return r.json(); })
     .then(function(d){

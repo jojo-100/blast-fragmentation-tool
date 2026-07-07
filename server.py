@@ -37,8 +37,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HTML_FILE = os.path.join(HERE, "blast_calculator_server.html")
 CSV_FILE  = os.path.join(HERE, "rock_factor_training_data.csv")
 
-# Same free vision model your step-2 script used. If it's busy, OpenRouter's
-# auto-router "openrouter/free" will pick another free vision-capable model.
+# Vision model on OpenRouter. Using the low-cost paid Llama 4 Maverick because
+# free vision slugs on OpenRouter retire frequently and break the tool. Maverick
+# is reliable and very cheap (~$0.15-0.20 per MILLION input tokens -- a single
+# rock photo costs a tiny fraction of a cent). To try a free model instead, you
+# can set this to "openrouter/free", but free availability is not guaranteed.
 VISION_MODEL = "meta-llama/llama-4-maverick"
 
 app = Flask(__name__)
@@ -107,6 +110,16 @@ def index():
     return send_file(HTML_FILE)
 
 
+@app.route("/presets/<path:filename>")
+def preset_image(filename):
+    """Serve the bundled example rock photos from the presets/ folder."""
+    safe = os.path.basename(filename)  # prevent path traversal
+    path = os.path.join(HERE, "presets", safe)
+    if not os.path.exists(path):
+        return "not found", 404
+    return send_file(path)
+
+
 @app.route("/predict_rock_factor", methods=["POST"])
 def predict_rock_factor():
     """Run the trained model on the five properties and return rock factor A."""
@@ -128,15 +141,28 @@ def analyze_photo():
         return jsonify({"error": "OPENROUTER_API_KEY not set in this terminal. "
                                  "Set it, then restart the server."}), 400
 
-    if "photo" not in request.files:
-        return jsonify({"error": "No photo uploaded."}), 400
+    raw = None
+    fname = ""
+    if "photo" in request.files and request.files["photo"].filename:
+        f = request.files["photo"]
+        fname = f.filename
+        raw = f.read()
+    elif request.form.get("preset"):
+        # bundled example image from the presets/ folder
+        safe = os.path.basename(request.form["preset"])
+        ppath = os.path.join(HERE, "presets", safe)
+        if not os.path.exists(ppath):
+            return jsonify({"error": f"Example image '{safe}' not found on the server."}), 400
+        fname = safe
+        with open(ppath, "rb") as pf:
+            raw = pf.read()
+    else:
+        return jsonify({"error": "No photo or example provided."}), 400
 
-    f = request.files["photo"]
-    raw = f.read()
     if not raw:
-        return jsonify({"error": "Uploaded photo was empty."}), 400
+        return jsonify({"error": "Image was empty."}), 400
 
-    mime = "image/png" if f.filename.lower().endswith(".png") else "image/jpeg"
+    mime = "image/png" if fname.lower().endswith(".png") else "image/jpeg"
     data_uri = f"data:{mime};base64,{base64.b64encode(raw).decode('utf-8')}"
 
     prompt = (

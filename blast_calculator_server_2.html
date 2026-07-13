@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuz-Ram Blast Fragmentation Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#ecedf0; --card:#ffffff; --ink:#191b1d; --muted:#63676c; --faint:#9aa0a6;
+  --line:#e7e9ec; --line2:#d9dce0; --fill:#f5f6f8; --fill2:#eceef1;
+  --bar:#191b1d; --barText:#f3f4f5;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(20,22,24,.05),0 8px 24px rgba(20,22,24,.05);
+  --r:14px; --rs:10px; --rx:7px;
+}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;margin:0;-webkit-font-smoothing:antialiased}
+h1{display:none}
+.subtitle{display:none}
+hr{display:none}
+h2{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px 0}
+
+.topbar{background:var(--bar);color:var(--barText);padding:20px 28px}
+.topbar .brand{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.topbar .sub{font-size:12.5px;color:#aeb3b8;margin-top:4px}
+.page{max-width:1180px;margin:0 auto;padding:24px 20px 44px}
+
+table.layout{border-collapse:separate;border-spacing:18px 0;width:calc(100% + 36px);margin:0 -18px}
+table.layout > tbody > tr > td{vertical-align:top;background:var(--card);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px}
+td.inputcol{width:340px}
+
+table.form{border-collapse:collapse;width:100%;margin:0}
+table.form td{padding:5px 4px;font-size:13.5px;color:var(--ink)}
+table.form td.lbl{text-align:left;white-space:nowrap}
+table.form td.sym{color:var(--faint);width:38px;font-family:var(--mono);font-size:12px}
+table.form td.in{width:92px}
+table.form td.un{font-size:11px;color:var(--muted);width:50px}
+table.form input{font-family:var(--mono);font-size:13px;width:82px;text-align:right;border:1px solid var(--line2);border-radius:var(--rx);padding:5px 9px;background:var(--card);color:var(--ink);transition:border-color .12s,box-shadow .12s}
+table.form input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(25,27,29,.09)}
+table.form tr.grphdr td{background:none;font-weight:600;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);padding:16px 4px 4px}
+
+table.results{border-collapse:separate;border-spacing:0;width:100%;margin:0;border:1px solid var(--line);border-radius:var(--rs);overflow:hidden}
+table.results td,table.results th{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px 13px;font-size:13px}
+table.results tr:last-child td,table.results tr:last-child th{border-bottom:none}
+table.results th{background:var(--fill);text-align:left;font-weight:500;color:var(--muted)}
+table.results td.num{text-align:right;font-family:var(--mono);color:var(--ink);white-space:nowrap}
+.bignum{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em}
+
+.legend{font-size:11px;color:var(--muted);margin:18px 0 7px}
+.legend b.p{color:var(--ink)}
+.legend b.m{color:var(--muted)}
+svg#chart{border:1px solid var(--line);border-radius:var(--rs);background:var(--card);display:block;max-width:100%;height:auto}
+
+table.dist{border-collapse:separate;border-spacing:0;margin:0;border:1px solid var(--line);border-radius:var(--rs);overflow:hidden}
+table.dist td,table.dist th{border-bottom:1px solid var(--line);padding:6px 18px;font-size:12.5px;text-align:right;font-family:var(--mono)}
+table.dist th{background:var(--fill);font-family:var(--sans);font-weight:600;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+table.dist tr:last-child td{border-bottom:none}
+table.dist tr.tgt td{background:var(--fill2);font-weight:600;color:var(--ink)}
+
+table.cases{border-collapse:separate;border-spacing:6px;margin:0 -6px 8px}
+table.cases td{border:none;padding:0}
+table.cases input[type=button]{font-family:var(--sans);font-size:12px;font-weight:500;padding:8px 12px;background:var(--card);border:1px solid var(--line2);border-radius:var(--rx);cursor:pointer;width:100%;color:var(--ink);transition:.12s}
+table.cases input[type=button]:hover{border-color:var(--muted)}
+table.cases input[type=button].on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.srcbox{font-size:12px;border:1px solid var(--line);background:var(--fill);border-radius:var(--rx);padding:9px 11px;margin-bottom:8px;color:var(--muted)}
+
+td.lbl[title],table.results th[title]{cursor:help;text-decoration:underline dotted var(--faint);text-underline-offset:3px}
+
+.researchbar{margin:22px 0 0}
+.researchbar input{font-family:var(--sans);font-size:13px;font-weight:500;padding:10px 18px;background:var(--card);border:1px solid var(--line2);border-radius:var(--rx);cursor:pointer;color:var(--ink);box-shadow:var(--shadow)}
+.researchbar input:hover{border-color:var(--muted)}
+#researchSec{margin-top:14px;background:var(--card);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--shadow);padding:22px 24px}
+#researchSec h2:first-child{margin-top:0}
+
+.disclosure{font-size:12.5px;line-height:1.55;border:1px solid var(--line2);background:var(--fill);border-radius:var(--rs);padding:13px 15px;margin-bottom:12px;color:var(--muted)}
+.disclosure b{color:var(--ink)}
+.verdictbox{border:1px solid var(--line2);background:var(--card);border-radius:var(--rs);padding:13px 15px;font-size:13px;margin-bottom:6px}
+.verdictbox .e{font-family:var(--mono);font-size:18px;font-weight:600}
+
+.method{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+.method b{color:var(--ink)}
+.method code{font-family:var(--mono);font-size:12px;background:var(--fill);padding:1px 5px;border-radius:4px;color:var(--ink)}
+.method .ref{color:var(--faint)}
+.footer{font-size:11.5px;color:var(--faint);margin-top:22px;padding-top:16px;text-align:center}
+
+.mlpanel{border:1px solid var(--line2);background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:0;margin:18px 0 0;overflow:hidden}
+table.mlflow{border-collapse:collapse;width:100%}
+table.mlflow > tbody > tr > td.mlcol{vertical-align:top;width:50%;padding:20px 22px}
+table.mlflow > tbody > tr > td.mlcol:first-child{border-right:1px solid var(--line)}
+.mlpanel .step{font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:none;padding:0;margin-bottom:14px;border:none}
+.mlpanel table.form td.lbl{white-space:nowrap}
+.mlpanel .status{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
+.mlpanel .desc{font-size:11.5px;color:var(--ink);background:var(--fill);border:1px solid var(--line);border-radius:var(--rx);padding:11px;margin-top:10px;white-space:pre-wrap;max-height:180px;overflow:auto;font-family:var(--mono);line-height:1.5}
+.mlpanel input[type=button]{font-family:var(--sans);font-size:12.5px;font-weight:500;padding:9px 16px;background:var(--ink);color:#fff;border:none;border-radius:var(--rx);cursor:pointer;margin-top:12px}
+.mlpanel input[type=button]:hover{background:#000}
+.mlpanel input[type=file]{font-size:12px;margin-bottom:3px}
+.presets{margin:12px 0}
+.presets .plabel{font-size:11.5px;color:var(--muted)}
+.presetBtn{font-family:var(--sans)!important;font-size:11.5px!important;font-weight:500!important;padding:7px 13px!important;margin:8px 6px 0 0!important;background:var(--card)!important;border:1px solid var(--line2)!important;border-radius:var(--rx)!important;cursor:pointer;color:var(--ink)!important}
+.presetBtn:hover{border-color:var(--muted)!important}
+.previewwrap{margin:12px 0}
+.preview{max-width:200px;max-height:150px;border:1px solid var(--line2);border-radius:var(--rs);display:block}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Kuz-Ram Blast Fragmentation Calculator</div>
+  <div class="sub">Predict fragment size from blast design &middot; machine-learning and vision rock-factor estimation</div>
+</header>
+<div class="page">
+
+<table class="layout"><tbody><tr>
+
+<!-- ============ INPUT COLUMN ============ -->
+<td class="inputcol">
+<h2>Blast Design Inputs</h2>
+<table class="form"><tbody>
+  <tr class="grphdr"><td colspan="4">GEOMETRY</td></tr>
+  <tr><td class="lbl" title="Distance from the blasthole to the nearest open rock face. Each hole has to break through this thickness of rock.">Burden</td><td class="sym">B</td><td class="in"><input id="B" type="number" value="3.0" step="0.1"></td><td class="un">m</td></tr>
+  <tr><td class="lbl" title="Distance between neighboring blastholes in the same row.">Spacing</td><td class="sym">S</td><td class="in"><input id="S" type="number" value="3.5" step="0.1"></td><td class="un">m</td></tr>
+  <tr><td class="lbl" title="Height of the rock face being blasted.">Bench height</td><td class="sym">H</td><td class="in"><input id="H" type="number" value="12.0" step="0.5"></td><td class="un">m</td></tr>
+  <tr><td class="lbl" title="Drilled diameter of the blasthole.">Hole diameter</td><td class="sym">d</td><td class="in"><input id="d" type="number" value="102" step="1"></td><td class="un">mm</td></tr>
+  <tr><td class="lbl" title="Length of the hole filled with explosive. The rest is stemming (inert packing that keeps the blast energy in the rock).">Charge length</td><td class="sym">L</td><td class="in"><input id="L" type="number" value="8.0" step="0.5"></td><td class="un">m</td></tr>
+
+  <tr class="grphdr"><td colspan="4">EXPLOSIVE</td></tr>
+  <tr><td class="lbl" title="Kilograms of explosive loaded into each hole.">Charge per hole</td><td class="sym">Q</td><td class="in"><input id="Q" type="number" value="45" step="1"></td><td class="un">kg</td></tr>
+  <tr><td class="lbl" title="How powerful the explosive is compared to ANFO, the industry standard (ANFO = 100). Higher = more energy per kilogram.">Rel. wt. strength</td><td class="sym">RWS</td><td class="in"><input id="RWS" type="number" value="100" step="1"></td><td class="un">/ANFO</td></tr>
+
+  <tr class="grphdr"><td colspan="4">ROCK &amp; DRILLING</td></tr>
+  <tr><td class="lbl" title="How resistant the rock is to blasting. About 7 = soft, 10 = medium, 13 = hard jointed, up to 22 = massive strong rock. Can be estimated from a photo in the panel below.">Rock factor</td><td class="sym">A</td><td class="in"><input id="A" type="number" value="10" step="0.5"></td><td class="un">7-22</td></tr>
+  <tr><td class="lbl" title="Typical drilling error in meters. Larger = holes end up further from their planned positions, giving less even breakage.">Drill accuracy SD</td><td class="sym">W</td><td class="in"><input id="W" type="number" value="0.2" step="0.05"></td><td class="un">m</td></tr>
+
+  <tr class="grphdr"><td colspan="4">TARGET (OPTIONAL)</td></tr>
+  <tr><td class="lbl" title="Fragments bigger than this count as oversize and would need secondary breaking before the crusher.">Max accept. size</td><td class="sym">&nbsp;</td><td class="in"><input id="target" type="number" value="60" step="5"></td><td class="un">cm</td></tr>
+</tbody></table>
+</td>
+
+<!-- ============ OUTPUT COLUMN ============ -->
+<td class="outputcol">
+<h2>Predicted Fragmentation</h2>
+
+<table class="results"><tbody>
+  <tr>
+    <th title="Half of the broken rock is predicted to be smaller than this size, half bigger. The headline number.">Mean size X50</th>
+    <td class="num"><span class="bignum" id="x50">—</span> cm</td>
+    <th title="How even the fragment sizes are. Higher = more uniform pile; lower = a wide mix of fines and boulders.">Uniformity index n</th>
+    <td class="num"><span class="bignum" id="nidx">—</span></td>
+  </tr>
+  <tr>
+    <th title="The size that 63.2% of the rock passes. Fixes the position of the size-distribution curve.">Characteristic size Xc</th><td class="num"><span id="xc">—</span> cm</td>
+    <th title="Explosive used per cubic meter of rock. Higher = more blast energy per volume.">Powder factor</th><td class="num"><span id="pf">—</span> kg/m&sup3;</td>
+  </tr>
+  <tr>
+    <th title="Volume of rock each hole must break: burden x spacing x bench height.">Rock volume / hole</th><td class="num"><span id="v0">—</span> m&sup3;</td>
+    <th title="Share of the pile predicted to be bigger than your target size.">Oversize (&gt; target)</th><td class="num"><span id="oversize">—</span> %</td>
+  </tr>
+</tbody></table>
+
+<div class="legend">Cumulative passing curve &nbsp; [ <b class="p">&#9472;&#9472; predicted</b> &nbsp; <b class="m">- - measured</b> ]</div>
+<svg id="chart" width="600" height="300" viewBox="0 0 600 300"></svg>
+
+<h2>Size Distribution Table</h2>
+<table class="dist" id="distTable">
+  <thead><tr><th>Size (cm)</th><th>% passing</th><th>% retained</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+
+</td>
+</tr></tbody></table>
+
+<!-- ============ ROCK FACTOR A FROM PHOTO (vision model + ML) ============ -->
+<h2>Estimate Rock Factor A from a Photo</h2>
+<div class="mlpanel">
+<table class="mlflow"><tbody><tr>
+
+  <td class="mlcol">
+    <div class="step">Step 1 &mdash; upload a rock photo</div>
+    <input type="file" id="rockPhoto" accept="image/*"><br>
+    <div class="presets">
+      <span class="plabel">No photo? Try an example:</span><br>
+      <input type="button" class="presetBtn" data-img="preset1.jpg" value="Example 1">
+      <input type="button" class="presetBtn" data-img="preset2.jpg" value="Example 2">
+      <input type="button" class="presetBtn" data-img="preset3.jpg" value="Example 3">
+    </div>
+    <div id="previewWrap" class="previewwrap" style="display:none">
+      <img id="preview" class="preview" alt="selected rock photo">
+    </div>
+    <input type="button" id="analyzeBtn" value="Analyze photo">
+    <div id="visionStatus" class="status">Pick a photo of a rock face (or an example), then click Analyze.</div>
+    <div id="visionDesc" class="desc"></div>
+  </td>
+
+  <td class="mlcol">
+    <div class="step">Step 2 &mdash; check the properties, then predict A</div>
+    <table class="form"><tbody>
+      <tr><td class="lbl" title="What the rock mass is like overall: 10 = powdery/friable, 50 = massive; blocky jointed rock takes the joint factor value.">Rock-mass description</td><td class="sym">RMD</td><td class="in"><input id="RMD" type="number" step="1"></td></tr>
+      <tr><td class="lbl" title="How far apart the natural cracks (joints) are: 10 = close (under 0.1 m), 20 = medium, 50 = wide.">Joint plane spacing</td><td class="sym">JPS</td><td class="in"><input id="JPS" type="number" step="1"></td></tr>
+      <tr><td class="lbl" title="Which way the joints face relative to the blast face: 20 = dip out of face, 30 = strike perpendicular, 40 = dip into face.">Joint plane angle</td><td class="sym">JPA</td><td class="in"><input id="JPA" type="number" step="1"></td></tr>
+      <tr><td class="lbl" title="Computed from rock density: RDI = 25 x density (t/m3) - 50.">Rock density influence</td><td class="sym">RDI</td><td class="in"><input id="RDI" type="number" step="0.1"></td></tr>
+      <tr><td class="lbl" title="From rock stiffness and strength. Roughly: soft ~5, medium ~15, hard ~30 and up.">Hardness factor</td><td class="sym">HF</td><td class="in"><input id="HF" type="number" step="0.1"></td></tr>
+    </tbody></table>
+    <input type="button" id="predictBtn" value="Predict A (ML) &rarr; load into calculator">
+    <div id="mlStatus" class="status">Predicts A from the five values and puts it in the calculator above.</div>
+  </td>
+
+</tr></tbody></table>
+</div>
+
+
+
+<!-- ============ RESEARCH SECTION (collapsible) ============ -->
+<div class="researchbar">
+<input type="button" id="researchBtn" value="Show the research behind this tool &#9662;">
+</div>
+<div id="researchSec" style="display:none">
+
+<h2>Compare Against Real Mine Data</h2>
+<div class="disclosure">
+<b>About these field cases.</b> MO-1&ndash;DI-5 are 10 real sites at the Sungun Copper Mine (Gheibie et al. 2009, Int. J. Rock Mechanics &amp; Mining Sciences 46:967&ndash;973). The measured sizes and rock factors come from that paper. The paper did not publish the blast geometry, so the geometry here is reconstructed &mdash; the comparison is made against the measured field size. Across all 10 sites, Kuz-Ram under-predicts the mean size by about 17&ndash;25%. That gap is a known limitation of the model, not an error in this tool.
+</div>
+<table class="cases"><tbody><tr id="caseRow"></tr></tbody></table>
+<div class="srcbox" id="caseSrc">&mdash;</div>
+<div class="verdictbox" id="verdict">
+  X50 error: <span class="e" id="vErr">&mdash;</span><br>
+  <span id="vTxt">Click a site button above to compare prediction vs. measurement.</span>
+</div>
+
+<div class="method">
+<b>How it works.</b>
+Mean fragment size: <code>X50 = A*(V0/Q)^0.8*Q^(1/6)*(115/RWS)^(19/30)</code>, with <code>V0 = B*S*H</code> (rock volume per hole).
+Curve shape: <code>n = (2.2 - 14*B/d)*sqrt((1+S/B)/2)*(1 - W/B)*(L/H)</code>.
+Size distribution: <code>P(x) = 1 - exp(-0.693*(x/X50)^n)</code>.
+Rock factor A guide: 7 = soft, 10 = medium, 13 = hard jointed, 22 = massive/strong.
+<br><br>
+<span class="ref">References: Cunningham (1983, 1987), the Kuz-Ram fragmentation model. Field cases: Gheibie et al. 2009 (shown per case).
+This is a planning estimate: it assumes one explosive type and does not capture crushed-zone fines or in-situ block effects.</span>
+</div>
+</div>
+
+<div class="footer">
+Kuz-Ram calculation runs in the browser. Rock-factor ML and photo analysis run on the server.
+<span id="liveStamp"></span>
+</div>
+</div><!-- /page -->
+
+<script>
+"use strict";
+
+/* ---------- Kuz-Ram core (verified) ---------- */
+function predict(p){
+  var V0 = p.B * p.S * p.H;
+  var powderFactor = p.Q / V0;
+  var X50 = p.A * Math.pow(V0/p.Q, 0.8) * Math.pow(p.Q, 1/6) * Math.pow(115/p.RWS, 19/30);
+  var n = (2.2 - 14*p.B/p.d) * Math.sqrt((1 + p.S/p.B)/2) * (1 - p.W/p.B) * (p.L/p.H);
+  if(!isFinite(n) || n <= 0) n = 0.01;
+  var Xc = X50 / Math.pow(0.693, 1/n);
+  return {V0:V0, powderFactor:powderFactor, X50:X50, n:n, Xc:Xc};
+}
+function passing(x, X50, n){
+  return (1 - Math.exp(-0.693 * Math.pow(x/X50, n))) * 100;
+}
+
+/* ---------- Documented validation cases ----------
+   REPLACE the placeholder numbers below with REAL published blasts:
+   each needs the full blast design AND the measured X50 from the source.   */
+var CASES = [
+  {id:"MO-1", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:30.4,RWS:100,A:3.27,W:0.15}, measuredX50:22.0,
+   src:"Sungun Copper Mine, site MO-1 &mdash; Gheibie et al. 2009. Measured mean size 22.0 cm (image analysis). Rock factor A = 3.27. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"MO-2", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.9,RWS:100,A:3.42,W:0.15}, measuredX50:22.0,
+   src:"Sungun Copper Mine, site MO-2 &mdash; Gheibie et al. 2009. Measured mean size 22.0 cm (image analysis). Rock factor A = 3.42. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"MO-3", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.4,RWS:100,A:3.39,W:0.15}, measuredX50:24.0,
+   src:"Sungun Copper Mine, site MO-3 &mdash; Gheibie et al. 2009. Measured mean size 24.0 cm (image analysis). Rock factor A = 3.39. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"MO-4", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.7,RWS:100,A:3.60,W:0.15}, measuredX50:24.0,
+   src:"Sungun Copper Mine, site MO-4 &mdash; Gheibie et al. 2009. Measured mean size 24.0 cm (image analysis). Rock factor A = 3.6. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"MO-5", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.7,RWS:100,A:3.60,W:0.15}, measuredX50:25.5,
+   src:"Sungun Copper Mine, site MO-5 &mdash; Gheibie et al. 2009. Measured mean size 25.5 cm (image analysis). Rock factor A = 3.6. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"DI-1", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.6,RWS:100,A:3.78,W:0.15}, measuredX50:26.5,
+   src:"Sungun Copper Mine, site DI-1 &mdash; Gheibie et al. 2009. Measured mean size 26.5 cm (image analysis). Rock factor A = 3.78. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"DI-2", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:30.5,RWS:100,A:4.24,W:0.15}, measuredX50:27.0,
+   src:"Sungun Copper Mine, site DI-2 &mdash; Gheibie et al. 2009. Measured mean size 27.0 cm (image analysis). Rock factor A = 4.24. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"DI-3", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.6,RWS:100,A:4.35,W:0.15}, measuredX50:28.5,
+   src:"Sungun Copper Mine, site DI-3 &mdash; Gheibie et al. 2009. Measured mean size 28.5 cm (image analysis). Rock factor A = 4.35. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"DI-4", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:30.3,RWS:100,A:4.60,W:0.15}, measuredX50:29.0,
+   src:"Sungun Copper Mine, site DI-4 &mdash; Gheibie et al. 2009. Measured mean size 29.0 cm (image analysis). Rock factor A = 4.6. ANFO. Geometry reconstructed (not published in the paper)."},
+  {id:"DI-5", p:{B:3.0,S:3.5,H:10.0,d:89,L:7.3,Q:29.7,RWS:100,A:4.92,W:0.15}, measuredX50:32.0,
+   src:"Sungun Copper Mine, site DI-5 &mdash; Gheibie et al. 2009. Measured mean size 32.0 cm (image analysis). Rock factor A = 4.92. ANFO. Geometry reconstructed (not published in the paper)."}
+];
+
+/* ---------- DOM ---------- */
+var ids = ["B","S","H","d","L","Q","RWS","A","W","target"];
+var el = {};
+for(var i=0;i<ids.length;i++){ el[ids[i]] = document.getElementById(ids[i]); }
+function $(id){ return document.getElementById(id); }
+
+function readInputs(){
+  return {B:+el.B.value,S:+el.S.value,H:+el.H.value,d:+el.d.value,L:+el.L.value,
+          Q:+el.Q.value,RWS:+el.RWS.value,A:+el.A.value,W:+el.W.value};
+}
+
+var activeCase = -1;
+
+/* ---------- chart ---------- */
+function drawChart(X50, n, overlay){
+  var svg=$("chart");
+  var W=600,H=300, mL=42,mR=12,mT=10,mB=34;
+  var plotW=W-mL-mR, plotH=H-mT-mB, xMax=120;
+  function sx(v){ return mL + Math.min(v,xMax)/xMax*plotW; }
+  function sy(v){ return mT + (1 - v/100)*plotH; }
+  var s="";
+  var gp,gx,x,yv;
+  for(gp=0; gp<=100; gp+=20){
+    s += '<line x1="'+mL+'" y1="'+sy(gp)+'" x2="'+(W-mR)+'" y2="'+sy(gp)+'" stroke="#e7e9ec" stroke-width="1"/>';
+    s += '<text x="'+(mL-5)+'" y="'+(sy(gp)+3)+'" text-anchor="end" font-family="monospace" font-size="9" fill="#000">'+gp+'</text>';
+  }
+  for(gx=0; gx<=xMax; gx+=20){
+    s += '<line x1="'+sx(gx)+'" y1="'+mT+'" x2="'+sx(gx)+'" y2="'+(H-mB)+'" stroke="#e7e9ec" stroke-width="1"/>';
+    s += '<text x="'+sx(gx)+'" y="'+(H-mB+13)+'" text-anchor="middle" font-family="monospace" font-size="9" fill="#000">'+gx+'</text>';
+  }
+  // axis box
+  s += '<rect x="'+mL+'" y="'+mT+'" width="'+plotW+'" height="'+plotH+'" fill="none" stroke="#d0d3d6" stroke-width="1"/>';
+  s += '<text x="'+(mL+plotW/2)+'" y="'+(H-2)+'" text-anchor="middle" font-family="serif" font-size="11" fill="#000">fragment size (cm)</text>';
+  s += '<text transform="translate(10,'+(mT+plotH/2)+') rotate(-90)" text-anchor="middle" font-family="serif" font-size="11" fill="#000">cumulative % passing</text>';
+  // 50% guide
+  s += '<line x1="'+mL+'" y1="'+sy(50)+'" x2="'+sx(X50)+'" y2="'+sy(50)+'" stroke="#b4b8bc" stroke-width="1" stroke-dasharray="2 2"/>';
+  s += '<line x1="'+sx(X50)+'" y1="'+sy(50)+'" x2="'+sx(X50)+'" y2="'+(H-mB)+'" stroke="#b4b8bc" stroke-width="1" stroke-dasharray="2 2"/>';
+  // measured overlay
+  if(overlay){
+    var mc="";
+    for(x=0;x<=xMax;x+=2){ yv=passing(x, overlay.measuredX50, n); mc += (x===0?'M':'L')+sx(x).toFixed(1)+','+sy(yv).toFixed(1)+' '; }
+    s += '<path d="'+mc+'" fill="none" stroke="#7a7f85" stroke-width="1.5" stroke-dasharray="5 3"/>';
+    s += '<circle cx="'+sx(overlay.measuredX50)+'" cy="'+sy(50)+'" r="4" fill="#7a7f85"/>';
+  }
+  // predicted
+  var pc="";
+  for(x=0;x<=xMax;x+=2){ yv=passing(x, X50, n); pc += (x===0?'M':'L')+sx(x).toFixed(1)+','+sy(yv).toFixed(1)+' '; }
+  s += '<path d="'+pc+'" fill="none" stroke="#191b1d" stroke-width="2"/>';
+  svg.innerHTML=s;
+}
+
+/* ---------- table ---------- */
+function drawTable(X50,n,target){
+  var sizes=[5,10,20,30,40,50,60,80,100];
+  var rows="";
+  for(var i=0;i<sizes.length;i++){
+    var x=sizes[i], pass=passing(x,X50,n);
+    var tgt=Math.abs(x-target)<0.5;
+    rows += '<tr class="'+(tgt?'tgt':'')+'"><td style="text-align:left;font-family:serif">'+x+(tgt?' (target)':'')+'</td><td>'+pass.toFixed(1)+'</td><td>'+(100-pass).toFixed(1)+'</td></tr>';
+  }
+  $("distTable").getElementsByTagName("tbody")[0].innerHTML=rows;
+}
+
+/* ---------- verdict ---------- */
+function showVerdict(predX50, overlay){
+  var errEl=$("vErr"), txtEl=$("vTxt"), srcEl=$("caseSrc"), box=$("verdict");
+  if(!overlay){
+    errEl.innerHTML="&mdash;";
+    txtEl.textContent="Click a site button above to compare prediction vs. measurement.";
+    srcEl.innerHTML="No validation case loaded. Inputs above are freely editable for design exploration.";
+    box.style.borderColor="#808080";
+    return;
+  }
+  srcEl.innerHTML="<b>"+overlay.id+"</b> &mdash; "+overlay.src;
+  var err=(predX50 - overlay.measuredX50)/overlay.measuredX50*100;
+  var abs=Math.abs(err);
+  errEl.textContent=(err>=0?"+":"")+err.toFixed(1)+"%";
+  var msg;
+  if(abs<=15){ msg="Within +/-15%: the model reproduces the field result well. Kuz-Ram is generally considered reliable in this band."; box.style.borderColor="#008000"; }
+  else if(abs<=30){ msg="Within +/-30%: acceptable for a planning estimate, but the gap shows the model's sensitivity to rock factor and explosive assumptions."; box.style.borderColor="#cc8800"; }
+  else { msg="Outside +/-30%: the model diverges from reality here. Likely the rock factor A or charge assumptions do not match field conditions -- this is where engineering judgement overrides the formula."; box.style.borderColor="#cc0000"; }
+  txtEl.textContent="Predicted "+predX50.toFixed(1)+" cm vs. measured "+overlay.measuredX50.toFixed(1)+" cm. "+msg;
+}
+
+/* ---------- main ---------- */
+function recompute(){
+  var p=readInputs();
+  var r=predict(p);
+  var target=+el.target.value;
+  $("x50").textContent=r.X50.toFixed(1);
+  $("nidx").textContent=r.n.toFixed(2);
+  $("xc").textContent=r.Xc.toFixed(1);
+  $("pf").textContent=r.powderFactor.toFixed(3);
+  $("v0").textContent=r.V0.toFixed(1);
+  $("oversize").textContent=(100-passing(target,r.X50,r.n)).toFixed(1);
+  var overlay = activeCase>=0 ? CASES[activeCase] : null;
+  drawChart(r.X50,r.n,overlay);
+  drawTable(r.X50,r.n,target);
+  showVerdict(r.X50,overlay);
+}
+
+/* ---------- cases ---------- */
+function buildCaseRow(){
+  var row=$("caseRow");
+  row.innerHTML="";
+  for(var i=0;i<CASES.length;i++){
+    (function(idx){
+      var td=document.createElement("td");
+      var btn=document.createElement("input");
+      btn.type="button"; btn.value=CASES[idx].id;
+      btn.onclick=function(){ loadCase(idx); };
+      td.appendChild(btn); row.appendChild(td);
+    })(i);
+  }
+  var td2=document.createElement("td");
+  var b2=document.createElement("input");
+  b2.type="button"; b2.value="(free design)";
+  b2.onclick=function(){ loadCase(-1); };
+  td2.appendChild(b2); row.appendChild(td2);
+}
+function loadCase(idx){
+  activeCase=idx;
+  var btns=$("caseRow").getElementsByTagName("input");
+  for(var i=0;i<btns.length;i++){
+    var isOn = (idx>=0 && i===idx) || (idx===-1 && i===CASES.length);
+    if(isOn) btns[i].className="on"; else btns[i].className="";
+  }
+  if(idx>=0){
+    var p=CASES[idx].p;
+    el.B.value=p.B; el.S.value=p.S; el.H.value=p.H; el.d.value=p.d;
+    el.L.value=p.L; el.Q.value=p.Q; el.RWS.value=p.RWS; el.A.value=p.A; el.W.value=p.W;
+  }
+  recompute();
+}
+
+for(var k=0;k<ids.length;k++){ el[ids[k]].oninput=recompute; }
+buildCaseRow();
+loadCase(-1);   /* tool starts standalone in free-design mode */
+
+/* research section toggle */
+$("researchBtn").onclick = function(){
+  var sec = $("researchSec");
+  var open = sec.style.display !== "none";
+  sec.style.display = open ? "none" : "block";
+  this.value = open ? "Show the research behind this tool \u25BE"
+                    : "Hide the research \u25B4";
+};
+$("liveStamp").textContent = "Computed: " + new Date().toString().slice(0,24);
+
+/* ---------- vision + ML rock-factor pipeline ---------- */
+function setStatus(id, msg, kind){
+  var e=$(id); e.textContent=msg;
+  e.style.color = (kind==='err') ? '#cc0000' : (kind==='ok' ? '#008000' : '#333');
+}
+
+/* selectedPreset holds a preset filename when an example is chosen; an upload clears it */
+var selectedPreset = null;
+function showPreview(src){ $("preview").src=src; $("previewWrap").style.display="block"; }
+
+$("rockPhoto").onchange = function(){
+  var f=this.files[0]; if(!f){ return; }
+  selectedPreset=null;
+  showPreview(URL.createObjectURL(f));
+  setStatus("visionStatus","Photo selected. Click Analyze photo.","");
+};
+
+var pbtns=document.getElementsByClassName("presetBtn");
+for(var pi=0; pi<pbtns.length; pi++){
+  pbtns[pi].onclick=function(){
+    selectedPreset=this.getAttribute("data-img");
+    $("rockPhoto").value="";
+    showPreview("/presets/"+selectedPreset);
+    setStatus("visionStatus","Example selected. Click Analyze photo.","");
+  };
+}
+
+$("analyzeBtn").onclick = function(){
+  var f = $("rockPhoto").files[0];
+  if(!f && !selectedPreset){ setStatus("visionStatus","Choose a photo or an example first.","err"); return; }
+  setStatus("visionStatus","Analyzing photo... (can take 10-30 s)","");
+  $("visionDesc").textContent="";
+  var fd = new FormData();
+  if(f){ fd.append("photo", f); } else { fd.append("preset", selectedPreset); }
+  fetch("/analyze_photo", {method:"POST", body:fd})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.error){ setStatus("visionStatus","Error: "+d.error,"err"); if(d.raw) $("visionDesc").textContent=d.raw; return; }
+      $("RMD").value=d.RMD; $("JPS").value=d.JPS; $("JPA").value=d.JPA;
+      $("RDI").value=d.RDI; $("HF").value=d.HF;
+      $("visionDesc").textContent=d.description||"";
+      setStatus("visionStatus","Done. Values filled at right. Edit any, then predict A.","ok");
+    })
+    .catch(function(e){ setStatus("visionStatus","Request failed: "+e,"err"); });
+};
+
+$("predictBtn").onclick = function(){
+  var body = {
+    RMD:+$("RMD").value, JPS:+$("JPS").value, JPA:+$("JPA").value,
+    RDI:+$("RDI").value, HF:+$("HF").value
+  };
+  var vals=[body.RMD,body.JPS,body.JPA,body.RDI,body.HF];
+  if(vals.some(function(v){return !isFinite(v);})){
+    setStatus("mlStatus","Fill all five property values first (analyze a photo, or type them in).","err"); return;
+  }
+  setStatus("mlStatus","Predicting...","");
+  fetch("/predict_rock_factor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.error){ setStatus("mlStatus","Error: "+d.error,"err"); return; }
+      el.A.value = d.A.toFixed(2);
+      loadCase(-1);   /* switch to free-design mode so the new A is used, then recompute */
+      el.A.value = d.A.toFixed(2);
+      recompute();
+      setStatus("mlStatus","Rock factor A = "+d.A.toFixed(2)+" - loaded into the calculator.","ok");
+    })
+    .catch(function(e){ setStatus("mlStatus","Request failed: "+e,"err"); });
+};
+</script>
+</body>
+</html>
